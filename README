@@ -1,0 +1,8 @@
+MkAI - A library for creating AI for Unity Games
+
+MkAI uses deliberative coherence theory to create networks of goals and tasks.
+The intended use is to create smart agents in games that use the network provided to them by the programmers.
+Programmers can change and improve the network at will, for example to indicate outside events and their impacts.
+The final goal is to have the library use Q-Learning method to discover weights of goals and tasks on its own.
+
+Requires CoLib.dll to work. See here for more info: https://sites.google.com/site/okantopcu/decoagent
