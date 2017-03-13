@@ -5,30 +5,43 @@ using System.Text;
 
 namespace MkAI
 {
-    class QLearn
+    public class QLearn : LearningSystem
     {
-        private static double GAMMA = 0.75;
-        private static int ITERATIONS = 10;
-        private static int curstate = 0;
-        private static int size = 2;
-        private static double good_range = 2.0;
-        private static double target_pos = 0;
-        private static Entity assoc = null;
+        private double GAMMA = 0.75;
+        private int ITERATIONS = 10;
+        private int curstate = 0;
 
-        private static int[] states = { 0, 1 }; // left or right
-        private static int[][] R = { new int[] { -1, 0 },
-                              new int[] { 0, -1 }
-                            };
-        private static int[,] q = new int[size, size];
+        private int dest_x, dest_y;
+        private int cur_x, cur_y;
 
-        public QLearn(Entity E)
+        // up down left right -> 1 2 3 4
+
+        // actions we can take
+        private int[] states;
+
+        // initial values
+        private int[,] R;
+        // learned values
+        private int[,] q;
+
+        public QLearn(Entity E, int size) : base(E, size)
         {
-            assoc = E;
+            states = new int[size];
+            R = new int[size, size];
+            q = new int[size, size];
         }
 
-        public void setTarget(double pos)
+        // set the target which should be our destination
+        public void setGoal(int x, int y)
         {
-            target_pos = pos;
+            dest_x = x;
+            dest_y = y;
+        }
+
+        public void setCurPos(int x, int y)
+        {
+            cur_x = x;
+            cur_y = y;
         }
 
         // distance between points getting less => more reward
@@ -40,26 +53,25 @@ namespace MkAI
         public int getHighest()
         {
             int res = int.MinValue;
-            for (int i = 0; i < size; ++i)
-                for (int j = 0; j < size; ++j)
+            for (int i = 0; i < state_size; ++i)
+                for (int j = 0; j < state_size; ++j)
                     if (q[i, j] > res)
                         res = q[i, j];
             return res;
-
         }
 
-        private static void initialize()
+        override public void initialize()
         {
-            for (int i = 0; i < size; i++)
+            for (int i = 0; i < state_size; i++)
             {
-                for (int j = 0; j < size; j++)
+                for (int j = 0; j < state_size; j++)
                 {
                     q[i, j] = 0;
                 }
             }
         }
 
-        private static int getRandomAction(int upperBound)
+        private int getRandomAction(int upperBound)
         {
             int action = 0;
             bool choiceIsValid = false;
@@ -68,7 +80,7 @@ namespace MkAI
             while (choiceIsValid == false)
             {
                 action = new Random().Next(0, upperBound);
-                if (R[curstate][action] > -1)
+                if (R[curstate, action] > -1)
                 {
                     choiceIsValid = true;
                 }
@@ -77,18 +89,18 @@ namespace MkAI
             return action;
         }
 
-        public static void train()
+        override public void train()
         {
             initialize();
 
             // Perform training, starting at all initial states.
             for (int j = 0; j < ITERATIONS; j++)
             {
-                for (int i = 0; i < size; i++)
+                for (int i = 0; i < state_size; i++)
                 {
                     episode(states[i]);
-                } // i
-            } // j
+                } 
+            }
             /*
             System.out.println("Q Matrix values:");
             for (int i = 0; i < Q_SIZE; i++)
@@ -124,7 +136,13 @@ namespace MkAI
             return;
         }
         */
-        private static void episode(int initialState)
+
+        public bool goalReached()
+        {
+            return cur_x == dest_x && cur_y == dest_y;
+        }
+
+        override protected void episode(int initialState)
         {
             curstate = initialState;
 
@@ -132,32 +150,42 @@ namespace MkAI
             do
             {
                 chooseAnAction();
-            } while (eval(assoc.getPos(), target_pos) <= good_range);
+            } while (!goalReached());
 
             // When we meet a goal, Run through the set once more for convergence.
-            for (int i = 0; i < size; i++)
+            for (int i = 0; i < state_size; i++)
             {
                 chooseAnAction();
             }
             return;
         }
 
-        private static void chooseAnAction()
+        private void chooseAnAction()
         {
             int possibleAction = 0;
 
             // Randomly choose a possible action connected to the current state.
-            possibleAction = getRandomAction(size);
+            possibleAction = getRandomAction(state_size);
 
-            if (R[curstate][possibleAction] >= 0)
+            if (R[curstate, possibleAction] >= 0)
             {
                 q[curstate, possibleAction] = reward(possibleAction);
                 curstate = possibleAction;
+
+                // 1 = up, 2 = down, 3 = left, 4 = right -- specific for our demo
+                if (curstate == 1)
+                    cur_y -= 1;
+                else if (curstate == 2)
+                    cur_y += 1;
+                else if (curstate == 3)
+                    cur_x -= 1;
+                else if (curstate == 4)
+                    cur_x += 1;
             }
             return;
         }
 
-        private static int maximum(int State, bool ReturnIndexOnly)
+        private int maximum(int State, bool ReturnIndexOnly)
         {
             // If ReturnIndexOnly = True, the Q matrix index is returned.
             // If ReturnIndexOnly = False, the Q matrix value is returned.
@@ -168,7 +196,7 @@ namespace MkAI
             while (!done)
             {
                 foundNewWinner = false;
-                for (int i = 0; i < size; i++)
+                for (int i = 0; i < state_size; i++)
                 {
                     if (i != winner)
                     {             // Avoid self-comparison.
@@ -191,9 +219,9 @@ namespace MkAI
             return q[State, winner];
         }
 
-        private static int reward(int Action)
+        private int reward(int Action)
         {
-            return (int)(R[curstate][Action] + GAMMA * maximum(Action, false));
+            return (int)(R[curstate, Action] + GAMMA * maximum(Action, false));
         }
 
         public double getGamma()
