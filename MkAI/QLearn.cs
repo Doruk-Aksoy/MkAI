@@ -3,72 +3,64 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+// add fsm open source code, write wrapper to make it easier to use.
+
+// this Q learning implementation uses the episodic method of learning
+
 namespace MkAI
 {
+    using MkAI.DataTypes;
     public class QLearn : LearningSystem
     {
         private double GAMMA = 0.75;
         private int ITERATIONS = 10;
+        private int prevstate = 0;
         private int curstate = 0;
-
-        private int dest_x, dest_y;
-        private int cur_x, cur_y;
-
-        // up down left right -> 1 2 3 4
-
-        // actions we can take
-        private int[] states;
-
-        // initial values
-        private int[,] R;
+        
         // learned values
-        private int[,] q;
+        private List<List<State>> Q;
 
         public QLearn(Entity E, int size) : base(E, size)
         {
-            states = new int[size];
-            R = new int[size, size];
-            q = new int[size, size];
+            Q = new List<List<State>>();
+            for (int i = 0; i < size; ++i)
+                Q.Add(new List<State>());
         }
 
-        // set the target which should be our destination
-        public void setGoal(int x, int y)
-        {
-            dest_x = x;
-            dest_y = y;
-        }
-
-        public void setCurPos(int x, int y)
-        {
-            cur_x = x;
-            cur_y = y;
-        }
-
-        // distance between points getting less => more reward
-        private static double eval(double epos, double tpos)
-        {
-            return tpos - epos;
-        }
-
+        // Returns the unique ID of the state with highest reward out of all states -- state number from 0 to N
         public int getHighest()
         {
-            int res = int.MinValue;
-            for (int i = 0; i < state_size; ++i)
-                for (int j = 0; j < state_size; ++j)
-                    if (q[i, j] > res)
-                        res = q[i, j];
+            int res = 0;
+            int val = int.MinValue;
+            foreach(List<State> l in Q)
+                for(int i = 0; i < l.Count; ++i)
+                    if (l[i].getReward() > val)
+                    {
+                        val = l[i].getReward();
+                        res = l[i].getID();
+                    }
+            return res;
+        }
+
+        // Returns the unique ID of the highest transition reward state from current state
+        public int getCurrentHighest()
+        {
+            int res = 0;
+            int val = int.MinValue;
+            for (int i = 0; i < Q[curstate].Count; ++i)
+                if (Q[curstate][i].getReward() > val)
+                {
+                    val = Q[curstate][i].getReward();
+                    res = Q[curstate][i].getID();
+                }
             return res;
         }
 
         override public void initialize()
         {
-            for (int i = 0; i < state_size; i++)
-            {
-                for (int j = 0; j < state_size; j++)
-                {
-                    q[i, j] = 0;
-                }
-            }
+            /*
+             empty for now
+             */
         }
 
         private int getRandomAction(int upperBound)
@@ -80,7 +72,7 @@ namespace MkAI
             while (choiceIsValid == false)
             {
                 action = new Random().Next(0, upperBound);
-                if (R[curstate, action] > -1)
+                if (action < state_list[curstate].Count) // if there exists a link here
                 {
                     choiceIsValid = true;
                 }
@@ -91,29 +83,27 @@ namespace MkAI
 
         override public void train()
         {
-            initialize();
-
             // Perform training, starting at all initial states.
             for (int j = 0; j < ITERATIONS; j++)
             {
-                for (int i = 0; i < state_size; i++)
+                for(int i = 0; i < state_list.Count; ++i)
                 {
-                    episode(states[i]);
+                    episode(i);
                 } 
             }
             /*
-            System.out.println("Q Matrix values:");
-            for (int i = 0; i < Q_SIZE; i++)
+            Console.Write("Q Matrix values:");
+            for (int i = 0; i < state_size; i++)
             {
-                for (int j = 0; j < Q_SIZE; j++)
+                for (int j = 0; j < state_size; j++)
                 {
-                    System.out.print(q[i][j] + ",\t");
+                    Console.Write(q[i, j] + ",\t");
                 } // j
-                System.out.print("\n");
+                Console.Write("\n");
             } // i
-            System.out.print("\n");
-            */
-            return;
+            Console.Write("\n");
+            
+            return;*/
         }
         /*
         private static void test()
@@ -139,23 +129,31 @@ namespace MkAI
 
         public bool goalReached()
         {
-            return cur_x == dest_x && cur_y == dest_y;
+            // if curstate is one of the defined goal states
+            foreach (State S in goal_states)
+                if (S.getID() == curstate)
+                    return true;
+            return false;
         }
 
         override protected void episode(int initialState)
         {
-            curstate = initialState;
-
-            // Travel from state to state until goal state is reached.
-            do
+            // if there are links
+            if(state_list[initialState].Count > 0)
             {
-                chooseAnAction();
-            } while (!goalReached());
+                curstate = initialState;
 
-            // When we meet a goal, Run through the set once more for convergence.
-            for (int i = 0; i < state_size; i++)
-            {
-                chooseAnAction();
+                // Travel from state to state until goal state is reached.
+                do
+                {
+                    chooseAnAction();
+                } while (goalReached());
+
+                // When we meet a goal, Run through the set once more for convergence.
+                for (int i = 0; i < state_size; i++)
+                {
+                    chooseAnAction();
+                }
             }
             return;
         }
@@ -170,16 +168,17 @@ namespace MkAI
             if (R[curstate, possibleAction] >= 0)
             {
                 q[curstate, possibleAction] = reward(possibleAction);
+                prevstate = curstate;
                 curstate = possibleAction;
 
                 // 1 = up, 2 = down, 3 = left, 4 = right -- specific for our demo
-                if (curstate == 1)
+                if (curstate == 0)
                     cur_y -= 1;
-                else if (curstate == 2)
+                else if (curstate == 1)
                     cur_y += 1;
-                else if (curstate == 3)
+                else if (curstate == 2)
                     cur_x -= 1;
-                else if (curstate == 4)
+                else if (curstate == 3)
                     cur_x += 1;
             }
             return;
@@ -222,6 +221,11 @@ namespace MkAI
         private int reward(int Action)
         {
             return (int)(R[curstate, Action] + GAMMA * maximum(Action, false));
+        }
+
+        public void getReward(int val, int action)
+        {
+            q[prevstate, action] += val;
         }
 
         public double getGamma()
