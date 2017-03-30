@@ -15,16 +15,16 @@ namespace MkAI
         private double GAMMA = 0.75;
         private int ITERATIONS = 10;
         private int prevstate = 0;
-        private int curstate = 0;
+        private State curstate = null;
         
         // learned values
-        private List<List<State>> Q;
+        private Dictionary<State, HashSet<Transition>> Q;
 
-        public QLearn(Entity E, int size) : base(E, size)
+        public QLearn(Entity E) : base(E)
         {
-            Q = new List<List<State>>();
-            for (int i = 0; i < size; ++i)
-                Q.Add(new List<State>());
+            Q = new Dictionary<State, HashSet<Transition>>();
+            //for (int i = 0; i < size; ++i)
+                //Q.Add(new List<State>());
         }
 
         // Returns the unique ID of the state with highest reward out of all states -- state number from 0 to N
@@ -32,13 +32,19 @@ namespace MkAI
         {
             int res = 0;
             int val = int.MinValue;
-            foreach(List<State> l in Q)
-                for(int i = 0; i < l.Count; ++i)
-                    if (l[i].getReward() > val)
+            foreach (var S in Q)
+            {
+                var SVal = S.Value;
+                foreach (var T in SVal)
+                {
+                    State temp = T.getDestination();
+                    if (temp.getReward() > val)
                     {
-                        val = l[i].getReward();
-                        res = l[i].getID();
+                        val = temp.getReward();
+                        res = temp.getID();
                     }
+                }
+            }
             return res;
         }
 
@@ -47,12 +53,15 @@ namespace MkAI
         {
             int res = 0;
             int val = int.MinValue;
-            for (int i = 0; i < Q[curstate].Count; ++i)
-                if (Q[curstate][i].getReward() > val)
+            foreach (var T in Q[curstate])
+            {
+                State temp = T.getDestination();
+                if (temp.getReward() > val)
                 {
-                    val = Q[curstate][i].getReward();
-                    res = Q[curstate][i].getID();
+                    val = temp.getReward();
+                    res = temp.getID();
                 }
+            }
             return res;
         }
 
@@ -63,6 +72,7 @@ namespace MkAI
              */
         }
 
+        // given the upperBound for allowed action ids, pick one
         private int getRandomAction(int upperBound)
         {
             int action = 0;
@@ -72,10 +82,12 @@ namespace MkAI
             while (choiceIsValid == false)
             {
                 action = new Random().Next(0, upperBound);
-                if (action < state_list[curstate].Count) // if there exists a link here
-                {
-                    choiceIsValid = true;
-                }
+                foreach (Transition T in transitions[curstate]) // if there exists valid transition -- optimize later maybe?
+                    if (T.getInput() == action)
+                    {
+                        choiceIsValid = true;
+                        break;
+                    }
             }
 
             return action;
@@ -86,9 +98,9 @@ namespace MkAI
             // Perform training, starting at all initial states.
             for (int j = 0; j < ITERATIONS; j++)
             {
-                for(int i = 0; i < state_list.Count; ++i)
+                foreach(State S in state_list)
                 {
-                    episode(i);
+                    episode(S);
                 } 
             }
             /*
@@ -131,15 +143,15 @@ namespace MkAI
         {
             // if curstate is one of the defined goal states
             foreach (State S in goal_states)
-                if (S.getID() == curstate)
+                if (S.getID() == curstate.getID())
                     return true;
             return false;
         }
 
-        override protected void episode(int initialState)
+        override protected void episode(State initialState)
         {
             // if there are links
-            if(state_list[initialState].Count > 0)
+            if(transitions[initialState].Count > 0)
             {
                 curstate = initialState;
 
@@ -150,7 +162,7 @@ namespace MkAI
                 } while (goalReached());
 
                 // When we meet a goal, Run through the set once more for convergence.
-                for (int i = 0; i < state_size; i++)
+                for (int i = 0; i < state_list.Count; i++)
                 {
                     chooseAnAction();
                 }
@@ -163,25 +175,21 @@ namespace MkAI
             int possibleAction = 0;
 
             // Randomly choose a possible action connected to the current state.
-            possibleAction = getRandomAction(state_size);
+            possibleAction = getRandomAction(state_list.Count);
 
-            if (R[curstate, possibleAction] >= 0)
-            {
-                q[curstate, possibleAction] = reward(possibleAction);
-                prevstate = curstate;
-                curstate = possibleAction;
+            q[curstate, possibleAction] = reward(possibleAction);
+            prevstate = curstate;
+            curstate = possibleAction;
 
-                // 1 = up, 2 = down, 3 = left, 4 = right -- specific for our demo
-                if (curstate == 0)
-                    cur_y -= 1;
-                else if (curstate == 1)
-                    cur_y += 1;
-                else if (curstate == 2)
-                    cur_x -= 1;
-                else if (curstate == 3)
-                    cur_x += 1;
-            }
-            return;
+            // 1 = up, 2 = down, 3 = left, 4 = right -- specific for our demo
+            if (curstate == 0)
+                cur_y -= 1;
+            else if (curstate == 1)
+                cur_y += 1;
+            else if (curstate == 2)
+                cur_x -= 1;
+            else if (curstate == 3)
+                cur_x += 1;
         }
 
         private int maximum(int State, bool ReturnIndexOnly)

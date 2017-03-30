@@ -10,27 +10,21 @@ namespace MkAI
     public abstract class LearningSystem
     {
         protected Entity assoc;
-        protected int target_state = 0;
-        protected int state_size = 2;
         protected int next_state_id = 0;
 
-        // Keep a list of goal states for checking
-        protected List<State> goal_states = new List<State>();
+        // Keep a set of goal states for checking
+        protected HashSet<State> goal_states = new HashSet<State>();
 
-        // state list -- uses adj list to represent state transitions
-        // also holds initial values -- treat as R matrix
-        protected Dictionary<State, List<State>> state_list;
+        // state list contains the list of all defined states by the user
+        protected HashSet<State> state_list;
+        // transition list -- holds for which inputs, a transition is possible
+        protected Dictionary<State, HashSet<Transition>> transitions;
 
-        public LearningSystem(Entity e, int size)
+        public LearningSystem(Entity e)
         {
             assoc = e;
-            state_size = size;
-            state_list = new Dictionary<State, List<State>>();
-        }
-
-        public void SetStateSize(int s)
-        {
-            state_size = s;
+            state_list = new HashSet<State>();
+            transitions = new Dictionary<State, HashSet<Transition>>();
         }
 
         public void incrementNextStateID()
@@ -48,6 +42,7 @@ namespace MkAI
             return "S" + next_state_id;
         }
 
+        // May need to remove these two
         public State makeState(string hash, int reward)
         {
             return new State(getNextFreeStateLabel(), hash, reward, this);
@@ -58,30 +53,35 @@ namespace MkAI
             return new State(label, hash, reward, this);
         }
 
-        public void setGoal(int state_id)
+        public bool addState(State S)
         {
-            if (state_id < state_size)
-                target_state = state_id;
+            return state_list.Add(S);
         }
 
-        public void addGoalState(State S)
+        public bool addGoalState(State S)
         {
-            goal_states.Add(S);
+            return goal_states.Add(S);
         }
 
-        public void addGoalStateCheck(State S)
+        public bool removeGoalState(State S)
         {
-            if (!goal_states.Exists(x => x.getID() == S.getID()))
-                goal_states.Add(S);
+            return goal_states.Remove(S);
         }
 
-        public void addStateTransition(State from, State to)
+        public bool addStateTransition(State from, State to, int input)
         {
-            if(state_list[from.getID()].Exists())
+            try
+            {
+                return transitions[from].Add(new Transition(to, input));
+            }
+            catch(KeyNotFoundException e)
+            {
+                return false;
+            }
         }
 
         public abstract void initialize();
         public abstract void train();
-        protected abstract void episode(int initialState);
+        protected abstract void episode(State initialState);
     }
 }

@@ -8,8 +8,8 @@ namespace MkAI.DataTypes
     public class State
     {
         private string label;
-        // Hash is used to compare uniqueness when adding to a map of unique states
-        private string hash;
+        // key is used to compare uniqueness when adding to a map of unique states
+        private string key;
         private int state_id;
         private int reward;
         private LearningSystem system_ref;
@@ -17,7 +17,7 @@ namespace MkAI.DataTypes
         public State(LearningSystem L)
         {
             label = "N/A";
-            hash = "Null";
+            key = "Null";
             reward = 0;
             system_ref = L;
             state_id = L.getNextStateID();
@@ -28,7 +28,7 @@ namespace MkAI.DataTypes
         public State(string l, string h, int r, LearningSystem L)
         {
             label = l;
-            hash = h;
+            key = h;
             reward = r;
             system_ref = L;
             state_id = L.getNextStateID();
@@ -40,9 +40,9 @@ namespace MkAI.DataTypes
             return label;
         }
 
-        public string getHash()
+        public string getKey()
         {
-            return hash;
+            return key;
         }
 
         public int getReward()
