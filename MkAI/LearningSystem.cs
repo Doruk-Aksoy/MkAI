@@ -43,19 +43,14 @@ namespace MkAI
         }
 
         // May need to remove these two
-        public State makeState(string hash, int reward)
+        public State makeState(string key)
         {
-            return new State(getNextFreeStateLabel(), hash, reward, this);
+            return new State(getNextFreeStateLabel(), key, this);
         }
 
-        public State makeState(string label, string hash, int reward)
+        public State makeState(string label, string key)
         {
-            return new State(label, hash, reward, this);
-        }
-
-        public bool addState(State S)
-        {
-            return state_list.Add(S);
+            return new State(label, key, this);
         }
 
         public bool addGoalState(State S)
@@ -68,18 +63,8 @@ namespace MkAI
             return goal_states.Remove(S);
         }
 
-        public bool addStateTransition(State from, State to, int input)
-        {
-            try
-            {
-                return transitions[from].Add(new Transition(to, input));
-            }
-            catch(KeyNotFoundException e)
-            {
-                return false;
-            }
-        }
-
+        abstract public bool addState(State S);
+        abstract public bool addStateTransition(State from, State to, int input, int reward);
         public abstract void initialize();
         public abstract void train();
         protected abstract void episode(State initialState);

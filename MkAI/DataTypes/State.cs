@@ -11,28 +11,33 @@ namespace MkAI.DataTypes
         // key is used to compare uniqueness when adding to a map of unique states
         private string key;
         private int state_id;
-        private int reward;
         private LearningSystem system_ref;
 
         public State(LearningSystem L)
         {
             label = "N/A";
             key = "Null";
-            reward = 0;
             system_ref = L;
             state_id = L.getNextStateID();
             // a state was created, increment id counter
             L.incrementNextStateID();
         }
 
-        public State(string l, string h, int r, LearningSystem L)
+        public State(string l, string h, LearningSystem L)
         {
             label = l;
             key = h;
-            reward = r;
             system_ref = L;
             state_id = L.getNextStateID();
             L.incrementNextStateID();
+        }
+
+        public State(State S)
+        {
+            label = S.label;
+            key = S.getKey();
+            state_id = S.getID();
+            system_ref = S.getSystem();
         }
 
         public string getLabel()
@@ -45,11 +50,6 @@ namespace MkAI.DataTypes
             return key;
         }
 
-        public int getReward()
-        {
-            return reward;
-        }
-
         public int getID()
         {
             return state_id;
@@ -58,11 +58,6 @@ namespace MkAI.DataTypes
         public LearningSystem getSystem()
         {
             return system_ref;
-        }
-
-        public void setReward(int r)
-        {
-            reward = r;
         }
     }
 }

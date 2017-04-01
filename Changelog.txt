@@ -1,0 +1,6 @@
+Version 0.1 --- Initial Testing
+===============================
+
+- Added 'Transition' class. Contains an input, a reward and a State.
+- Removed reward from State, added it to Transition.
+- Rewrote to use Dictionary and HashSets for transitions.

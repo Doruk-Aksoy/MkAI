@@ -14,10 +14,10 @@ namespace MkAI
     {
         private double GAMMA = 0.75;
         private int ITERATIONS = 10;
-        private int prevstate = 0;
+        private State prevstate = null;
         private State curstate = null;
         
-        // learned values
+        // learned values -- make this into list of integer stuff with copying!
         private Dictionary<State, HashSet<Transition>> Q;
 
         public QLearn(Entity E) : base(E)
@@ -37,11 +37,10 @@ namespace MkAI
                 var SVal = S.Value;
                 foreach (var T in SVal)
                 {
-                    State temp = T.getDestination();
-                    if (temp.getReward() > val)
+                    if (T.getReward() > val)
                     {
-                        val = temp.getReward();
-                        res = temp.getID();
+                        val = T.getReward();
+                        res = T.getDestination().getID();
                     }
                 }
             }
@@ -55,11 +54,10 @@ namespace MkAI
             int val = int.MinValue;
             foreach (var T in Q[curstate])
             {
-                State temp = T.getDestination();
-                if (temp.getReward() > val)
+                if (T.getReward() > val)
                 {
-                    val = temp.getReward();
-                    res = temp.getID();
+                    val = T.getReward();
+                    res = T.getDestination().getID();
                 }
             }
             return res;
@@ -73,24 +71,31 @@ namespace MkAI
         }
 
         // given the upperBound for allowed action ids, pick one
-        private int getRandomAction(int upperBound)
+        private Transition getRandomAction()
         {
-            int action = 0;
+            int dest = 0;
             bool choiceIsValid = false;
+            Transition res = null;
 
             // Randomly choose a possible action connected to the current state.
             while (choiceIsValid == false)
             {
-                action = new Random().Next(0, upperBound);
-                foreach (Transition T in transitions[curstate]) // if there exists valid transition -- optimize later maybe?
-                    if (T.getInput() == action)
+                // upperbound is the upperbound for an input for the transition
+                dest = new Random().Next(0, Q[curstate].Count);
+                int pos = 0;
+                foreach (Transition T in Q[curstate])
+                {
+                    // if I'm at the right one
+                    if (dest == pos)
                     {
                         choiceIsValid = true;
+                        res = T;
                         break;
                     }
+                    pos++;
+                }
             }
-
-            return action;
+            return res;
         }
 
         override public void train()
@@ -172,44 +177,39 @@ namespace MkAI
 
         private void chooseAnAction()
         {
-            int possibleAction = 0;
+            Transition possibleAction = null;
 
             // Randomly choose a possible action connected to the current state.
-            possibleAction = getRandomAction(state_list.Count);
+            possibleAction = getRandomAction();
+            if (possibleAction != null)
+            {
+                // update the reward
+                possibleAction.setReward(reward(possibleAction));
 
-            q[curstate, possibleAction] = reward(possibleAction);
-            prevstate = curstate;
-            curstate = possibleAction;
-
-            // 1 = up, 2 = down, 3 = left, 4 = right -- specific for our demo
-            if (curstate == 0)
-                cur_y -= 1;
-            else if (curstate == 1)
-                cur_y += 1;
-            else if (curstate == 2)
-                cur_x -= 1;
-            else if (curstate == 3)
-                cur_x += 1;
+                prevstate = curstate;
+                curstate = possibleAction.getDestination();
+            }
         }
 
-        private int maximum(int State, bool ReturnIndexOnly)
+        // the state to process
+        private int maximum(State S, bool ReturnIndexOnly)
         {
             // If ReturnIndexOnly = True, the Q matrix index is returned.
             // If ReturnIndexOnly = False, the Q matrix value is returned.
-            int winner = 0;
+            Transition winner = Q[S].ElementAtOrDefault(0);
             bool foundNewWinner = false;
             bool done = false;
 
             while (!done)
             {
                 foundNewWinner = false;
-                for (int i = 0; i < state_size; i++)
+                foreach (Transition T in Q[S])
                 {
-                    if (i != winner)
-                    {             // Avoid self-comparison.
-                        if (q[State, i] > q[State, winner])
+                    if (T != winner) // Avoid self-comparison.
+                    {
+                        if (T.getReward() > winner.getReward())
                         {
-                            winner = i;
+                            winner = T;
                             foundNewWinner = true;
                         }
                     }
@@ -222,18 +222,13 @@ namespace MkAI
             }
 
             if (ReturnIndexOnly == true)
-                return winner;
-            return q[State, winner];
+                return winner.getDestination().getID();
+            return winner.getReward();
         }
 
-        private int reward(int Action)
+        private int reward(Transition T)
         {
-            return (int)(R[curstate, Action] + GAMMA * maximum(Action, false));
-        }
-
-        public void getReward(int val, int action)
-        {
-            q[prevstate, action] += val;
+            return (int)(T.getReward() + GAMMA * maximum(T.getDestination(), false));
         }
 
         public double getGamma()
@@ -244,6 +239,37 @@ namespace MkAI
         public int getIterations()
         {
             return ITERATIONS;
+        }
+
+        override public bool addState(State S)
+        {
+            return state_list.Add(S);
+        }
+
+        override public bool addStateTransition(State from, State to, int input, int reward)
+        {
+            HashSet<Transition> temp;
+            // fresh init of state -> transition table for a row
+            if(!transitions.TryGetValue(from, out temp))
+            {
+                // we need to deepcopy the transition object because transitiond and Q hold different reward values
+                Transition T = new Transition(to, input, reward);
+                Transition QT = new DataTypes.Transition(T);
+                temp = new HashSet<Transition>();
+                HashSet<Transition> qtemp = new HashSet<Transition>();
+                temp.Add(T);
+                qtemp.Add(QT);
+                transitions.Add(from, temp);
+                Q.Add(from, qtemp);
+                return false;
+            }
+            else
+            {
+                Transition T = new DataTypes.Transition(to, input, reward);
+                transitions[from].Add(T);
+                Q[from].Add(new Transition(T));
+                return true;
+            }
         }
     }
 }
