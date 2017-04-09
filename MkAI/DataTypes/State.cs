@@ -61,7 +61,7 @@ namespace MkAI.DataTypes
         // compare data contents
         override public bool Equals(Object S)
         {
-            if (data == null)
+            if (S == null || data == null || ((State)S).data == null)
                 return false;
             if (data.Length != ((State)S).data.Length)
                 return false;

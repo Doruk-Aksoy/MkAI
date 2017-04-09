@@ -13,7 +13,7 @@ namespace MkAI
     public class QLearn : LearningSystem
     {
         private double GAMMA = 0.75;
-        private int ITERATIONS = 5;
+        private int ITERATIONS = 10;
         private State prevstate = null;
         private State workstate = null;
         
@@ -106,7 +106,7 @@ namespace MkAI
                 foreach(State S in state_list)
                 {
                     episode(S);
-                } 
+                }
             }
         }
 
@@ -133,7 +133,7 @@ namespace MkAI
                     {
                         chooseAnAction();
                     } while (goalReached());
-
+                    
                     // When we meet a goal, Run through the set once more for convergence.
                     for (int i = 0; i < state_list.Count; i++)
                         chooseAnAction();
@@ -220,6 +220,11 @@ namespace MkAI
         public int getIterations()
         {
             return ITERATIONS;
+        }
+
+        public void setIterations(int iter)
+        {
+            ITERATIONS = iter;
         }
 
         public State getCurrentState()
