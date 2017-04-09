@@ -9,24 +9,15 @@ namespace MkAI.DataTypes
     {
         private string label;
         // key is used to compare uniqueness when adding to a map of unique states
-        private string key;
+        private Byte[] data = null;
         private int state_id;
         private LearningSystem system_ref;
 
-        public State(LearningSystem L)
-        {
-            label = "N/A";
-            key = "Null";
-            system_ref = L;
-            state_id = L.getNextStateID();
-            // a state was created, increment id counter
-            L.incrementNextStateID();
-        }
-
-        public State(string l, string h, LearningSystem L)
+        // copy byte data to this later with another method
+        public State(string l, LearningSystem L)
         {
             label = l;
-            key = h;
+            data = null;
             system_ref = L;
             state_id = L.getNextStateID();
             L.incrementNextStateID();
@@ -35,9 +26,16 @@ namespace MkAI.DataTypes
         public State(State S)
         {
             label = S.label;
-            key = S.getKey();
+            data = S.getData();
             state_id = S.getID();
             system_ref = S.getSystem();
+        }
+
+        public void putData(List<Byte> b)
+        {
+            data = new Byte[b.Count];
+            for (int i = 0; i < b.Count; ++i)
+                data[i] = b[i];
         }
 
         public string getLabel()
@@ -45,9 +43,9 @@ namespace MkAI.DataTypes
             return label;
         }
 
-        public string getKey()
+        public byte[] getData()
         {
-            return key;
+            return data;
         }
 
         public int getID()
@@ -58,6 +56,26 @@ namespace MkAI.DataTypes
         public LearningSystem getSystem()
         {
             return system_ref;
+        }
+
+        // compare data contents
+        override public bool Equals(Object S)
+        {
+            if (data == null)
+                return false;
+            if (data.Length != ((State)S).data.Length)
+                return false;
+            for (int i = 0; i < data.Length; ++i)
+                if (data[i] != ((State)S).data[i])
+                    return false;
+            return true;
+        }
+
+        public override int GetHashCode()
+        {
+            if (data == null)
+                return label.GetHashCode();
+            return data.GetHashCode();
         }
     }
 }

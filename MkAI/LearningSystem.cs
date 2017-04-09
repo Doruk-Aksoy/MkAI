@@ -11,6 +11,7 @@ namespace MkAI
     {
         protected Entity assoc;
         protected int next_state_id = 0;
+        protected State curstate = null;
 
         // Keep a set of goal states for checking
         protected HashSet<State> goal_states = new HashSet<State>();
@@ -45,12 +46,7 @@ namespace MkAI
         // May need to remove these two
         public State makeState(string key)
         {
-            return new State(getNextFreeStateLabel(), key, this);
-        }
-
-        public State makeState(string label, string key)
-        {
-            return new State(label, key, this);
+            return new State(getNextFreeStateLabel(), this);
         }
 
         public bool addGoalState(State S)
@@ -61,6 +57,11 @@ namespace MkAI
         public bool removeGoalState(State S)
         {
             return goal_states.Remove(S);
+        }
+
+        public void setCurrentState(State S)
+        {
+            curstate = S;
         }
 
         abstract public bool addState(State S);

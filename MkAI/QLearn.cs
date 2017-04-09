@@ -13,9 +13,9 @@ namespace MkAI
     public class QLearn : LearningSystem
     {
         private double GAMMA = 0.75;
-        private int ITERATIONS = 10;
+        private int ITERATIONS = 5;
         private State prevstate = null;
-        private State curstate = null;
+        private State workstate = null;
         
         // learned values -- make this into list of integer stuff with copying!
         private Dictionary<State, HashSet<Transition>> Q;
@@ -48,16 +48,16 @@ namespace MkAI
         }
 
         // Returns the unique ID of the highest transition reward state from current state
-        public int getCurrentHighest()
+        public Transition getCurrentHighest()
         {
-            int res = 0;
+            Transition res = null;
             int val = int.MinValue;
             foreach (var T in Q[curstate])
             {
                 if (T.getReward() > val)
                 {
                     val = T.getReward();
-                    res = T.getDestination().getID();
+                    res = T;
                 }
             }
             return res;
@@ -81,9 +81,9 @@ namespace MkAI
             while (choiceIsValid == false)
             {
                 // upperbound is the upperbound for an input for the transition
-                dest = new Random().Next(0, Q[curstate].Count);
+                dest = new Random().Next(0, Q[workstate].Count);
                 int pos = 0;
-                foreach (Transition T in Q[curstate])
+                foreach (Transition T in Q[workstate])
                 {
                     // if I'm at the right one
                     if (dest == pos)
@@ -108,41 +108,7 @@ namespace MkAI
                     episode(S);
                 } 
             }
-            /*
-            Console.Write("Q Matrix values:");
-            for (int i = 0; i < state_size; i++)
-            {
-                for (int j = 0; j < state_size; j++)
-                {
-                    Console.Write(q[i, j] + ",\t");
-                } // j
-                Console.Write("\n");
-            } // i
-            Console.Write("\n");
-            
-            return;*/
         }
-        /*
-        private static void test()
-        {
-            // Perform tests, starting at all initial states.
-            System.out.println("Shortest routes from initial states:");
-            for (int i = 0; i < Q_SIZE; i++)
-            {
-                currentState = INITIAL_STATES[i];
-                int newState = 0;
-                do
-                {
-                    newState = maximum(currentState, true);
-                    System.out.print(currentState + ", ");
-                    currentState = newState;
-                } while (currentState < 5);
-                System.out.print("5\n");
-            }
-
-            return;
-        }
-        */
 
         public bool goalReached()
         {
@@ -156,23 +122,27 @@ namespace MkAI
         override protected void episode(State initialState)
         {
             // if there are links
-            if(transitions[initialState].Count > 0)
+            try
             {
-                curstate = initialState;
-
-                // Travel from state to state until goal state is reached.
-                do
+                if (transitions[initialState].Count > 0)
                 {
-                    chooseAnAction();
-                } while (goalReached());
+                    workstate = initialState;
 
-                // When we meet a goal, Run through the set once more for convergence.
-                for (int i = 0; i < state_list.Count; i++)
-                {
-                    chooseAnAction();
+                    // Travel from state to state until goal state is reached.
+                    do
+                    {
+                        chooseAnAction();
+                    } while (goalReached());
+
+                    // When we meet a goal, Run through the set once more for convergence.
+                    for (int i = 0; i < state_list.Count; i++)
+                        chooseAnAction();
                 }
             }
-            return;
+            catch(Exception E)
+            {
+                // log later
+            }
         }
 
         private void chooseAnAction()
@@ -186,8 +156,8 @@ namespace MkAI
                 // update the reward
                 possibleAction.setReward(reward(possibleAction));
 
-                prevstate = curstate;
-                curstate = possibleAction.getDestination();
+                prevstate = workstate;
+                workstate = possibleAction.getDestination();
             }
         }
 
@@ -196,34 +166,45 @@ namespace MkAI
         {
             // If ReturnIndexOnly = True, the Q matrix index is returned.
             // If ReturnIndexOnly = False, the Q matrix value is returned.
-            Transition winner = Q[S].ElementAtOrDefault(0);
-            bool foundNewWinner = false;
-            bool done = false;
-
-            while (!done)
+            try
             {
-                foundNewWinner = false;
-                foreach (Transition T in Q[S])
+                Transition winner = Q[S].ElementAtOrDefault(0);
+                if (winner != null)
                 {
-                    if (T != winner) // Avoid self-comparison.
+                    bool foundNewWinner = false;
+                    bool done = false;
+
+                    while (!done)
                     {
-                        if (T.getReward() > winner.getReward())
+                        foundNewWinner = false;
+                        foreach (Transition T in Q[S])
                         {
-                            winner = T;
-                            foundNewWinner = true;
+                            if (T != winner) // Avoid self-comparison.
+                            {
+                                if (T.getReward() > winner.getReward())
+                                {
+                                    winner = T;
+                                    foundNewWinner = true;
+                                }
+                            }
+                        }
+
+                        if (foundNewWinner == false)
+                        {
+                            done = true;
                         }
                     }
-                }
 
-                if (foundNewWinner == false)
-                {
-                    done = true;
+                    if (ReturnIndexOnly == true)
+                        return winner.getDestination().getID();
+                    return winner.getReward();
                 }
             }
+            catch (Exception E)
+            {
 
-            if (ReturnIndexOnly == true)
-                return winner.getDestination().getID();
-            return winner.getReward();
+            }
+            return 0;
         }
 
         private int reward(Transition T)
@@ -241,6 +222,11 @@ namespace MkAI
             return ITERATIONS;
         }
 
+        public State getCurrentState()
+        {
+            return curstate;
+        }
+
         override public bool addState(State S)
         {
             return state_list.Add(S);
@@ -250,7 +236,7 @@ namespace MkAI
         {
             HashSet<Transition> temp;
             // fresh init of state -> transition table for a row
-            if(!transitions.TryGetValue(from, out temp))
+            if (!transitions.TryGetValue(from, out temp))
             {
                 // we need to deepcopy the transition object because transitiond and Q hold different reward values
                 Transition T = new Transition(to, input, reward);
