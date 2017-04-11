@@ -114,7 +114,7 @@ namespace MkAI
         {
             // if curstate is one of the defined goal states
             foreach (State S in goal_states)
-                if (S.getID() == curstate.getID())
+                if (S.Equals(curstate))
                     return true;
             return false;
         }
