@@ -1,7 +1,9 @@
-﻿using CoLib.DeCo;
+﻿using System;
+using CoLib.DeCo;
 
 namespace MkAI
 {
+    [Serializable]
     public class EntityAI
     {
         private DeCoNet network;

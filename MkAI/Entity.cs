@@ -11,6 +11,7 @@ namespace MkAI
         DeCoLink_INCOMPATIBLE
     }
 
+    [Serializable]
     public class Entity
     {
         private string tag;

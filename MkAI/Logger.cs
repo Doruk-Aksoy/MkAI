@@ -1,8 +1,10 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Reflection;
 
 namespace MkAI
 {
+    [Serializable]
     public class Logger
     {
         public string filePath = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + "Log.txt";

@@ -31,7 +31,7 @@ void AddStateDataFromMap(State^ S, Player* P, bool goalState) {
 	byte_data->Add(static_cast<unsigned char>((x >> 8) & 0xff));
 	byte_data->Add(static_cast<unsigned char>(y & 0xff));
 	byte_data->Add(static_cast<unsigned char>((y >> 8) & 0xff));
-	byte_data->Add(static_cast<unsigned char>(CurrentMap->)
+//	byte_data->Add(static_cast<unsigned char>(CurrentMap->)
 	S->putData(byte_data);
 }
 
@@ -44,7 +44,7 @@ void SendRMatrix(Agent* A) {
 	for (short i = 0; i < width; ++i) {
 		for (short j = 0; j < height; ++j) {
 			State^ S = ls->makeState("S" + state_keys++);
-			AddStateDataFromMap(S, P);
+			AddStateDataFromMap(S, P, false);
 			ls->addState(S);
 			// for every possible move we can do on this state, create transitions
 			for (auto dir : valid_dir) {
@@ -56,7 +56,7 @@ void SendRMatrix(Agent* A) {
 					point prev = P->getpos(), next = point(x, y);
 					// simulate player position
 					P->setpos(next);
-					AddStateDataFromMap(temp, P);
+					AddStateDataFromMap(temp, P, false);
 					P->setpos(prev);
 					ls->addStateTransition(S, temp, static_cast<int>(dir), GetRewardAtPos(next));
 				}

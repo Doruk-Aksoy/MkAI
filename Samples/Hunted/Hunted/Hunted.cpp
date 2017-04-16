@@ -51,6 +51,7 @@ int main() {
 			g_delay(0.075); // have delay between inputs in order to avoid instant screen switches
 			DisplayAgentMode();
 			agentmode = AskAgentMode();
+			clearscreen();
 		}
 
 		g_delay(0.075); // have delay between inputs in order to avoid instant screen switches
@@ -70,13 +71,14 @@ int main() {
 			agent = new Agent(p, entity);
 			// agentmode is either train or use recorded data, true = train
 			agent->setLearningSystem(agentmode);
-			if (!agentmode) {
+			if (agentmode) {
 				agent->getLearningSystem()->setIterations(5);
 				SendRMatrix(agent);
 				if (agent->getLearningSystem()->train()) {
 					cout << "Training complete!\n Reverting back to the menu...";
 					agent->getEntity()->outputLearnedData();
 					g_delay(1.0);
+					goto GameLoop;
 				}
 			}
 		}

@@ -8,6 +8,7 @@ using System.Linq;
 
 namespace MkAI
 {
+    [Serializable]
     public class QLearn : LearningSystem
     {
         private double GAMMA = 0.75;
@@ -68,6 +69,23 @@ namespace MkAI
              */
         }
 
+        private State getRandomState()
+        {
+            State res = null;
+            int dest = new Random().Next(0, Q[workstate].Count), pos = 0;
+            foreach (State S in state_list)
+            {
+                // if I'm at the right one
+                if (dest == pos)
+                {
+                    res = S;
+                    break;
+                }
+                pos++;
+            }
+            return res;
+        }
+
         // given the upperBound for allowed action ids, pick one
         private Transition getRandomAction()
         {
@@ -101,10 +119,14 @@ namespace MkAI
             // Perform training, starting at all initial states.
             for (int j = 0; j < ITERATIONS; j++)
             {
+                // for every iteration, attach a random goal state
+                State currentgoal = getRandomState();
+                addGoalState(currentgoal);
                 foreach(State S in state_list)
                 {
                     episode(S);
                 }
+                removeGoalState(currentgoal);
             }
             return true;
         }

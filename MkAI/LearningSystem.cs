@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace MkAI
 {
+    [Serializable]
     public abstract class LearningSystem
     {
         protected Entity assoc;
