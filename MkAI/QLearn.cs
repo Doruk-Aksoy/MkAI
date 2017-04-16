@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 // add fsm open source code, write wrapper to make it easier to use.
 
@@ -9,7 +8,6 @@ using System.Text;
 
 namespace MkAI
 {
-    using MkAI.DataTypes;
     public class QLearn : LearningSystem
     {
         private double GAMMA = 0.75;
@@ -98,7 +96,7 @@ namespace MkAI
             return res;
         }
 
-        override public void train()
+        override public bool train()
         {
             // Perform training, starting at all initial states.
             for (int j = 0; j < ITERATIONS; j++)
@@ -108,6 +106,7 @@ namespace MkAI
                     episode(S);
                 }
             }
+            return true;
         }
 
         public bool goalReached()
@@ -141,7 +140,7 @@ namespace MkAI
             }
             catch(Exception E)
             {
-                // log later
+                Debugger.Log("Unknown initial state exception during episode.");
             }
         }
 
@@ -202,7 +201,7 @@ namespace MkAI
             }
             catch (Exception E)
             {
-
+                Debugger.Log("Unknown state exception during maximum calculation.");
             }
             return 0;
         }
@@ -222,7 +221,7 @@ namespace MkAI
             return ITERATIONS;
         }
 
-        public void setIterations(int iter)
+        public override void setIterations(int iter)
         {
             ITERATIONS = iter;
         }
@@ -234,7 +233,12 @@ namespace MkAI
 
         override public bool addState(State S)
         {
-            return state_list.Add(S);
+            bool res = state_list.Add(S);
+            if (res)
+                Debugger.Log("Added State " + S.getLabel() + ".");
+            else
+                Debugger.Log("State " + S.getLabel() + "already exists.");
+            return res;
         }
 
         override public bool addStateTransition(State from, State to, int input, int reward)
@@ -245,7 +249,9 @@ namespace MkAI
             {
                 // we need to deepcopy the transition object because transitiond and Q hold different reward values
                 Transition T = new Transition(to, input, reward);
-                Transition QT = new DataTypes.Transition(T);
+                Transition QT = new Transition(T);
+                // set reward to initially 0 -- we will learn these later
+                QT.setReward(0);
                 temp = new HashSet<Transition>();
                 HashSet<Transition> qtemp = new HashSet<Transition>();
                 temp.Add(T);
@@ -256,9 +262,10 @@ namespace MkAI
             }
             else
             {
-                Transition T = new DataTypes.Transition(to, input, reward);
+                Transition T = new Transition(to, input, reward);
+                Transition QT = new Transition(to, input, 0);
                 transitions[from].Add(T);
-                Q[from].Add(new Transition(T));
+                Q[from].Add(new Transition(QT));
                 return true;
             }
         }

@@ -1,17 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace MkAI
 {
-    using DataTypes;
-
     public abstract class LearningSystem
     {
         protected Entity assoc;
         protected int next_state_id = 0;
         protected State curstate = null;
+
+        protected bool logging = false;
+        protected Logger Debugger = new Logger();
 
         // Keep a set of goal states for checking
         protected HashSet<State> goal_states = new HashSet<State>();
@@ -46,7 +44,7 @@ namespace MkAI
         // May need to remove these two
         public State makeState(string key)
         {
-            return new State(getNextFreeStateLabel(), this);
+            return new State(key, this);
         }
 
         public bool addGoalState(State S)
@@ -64,10 +62,14 @@ namespace MkAI
             curstate = S;
         }
 
+        // Overrides for other Classes
+
         abstract public bool addState(State S);
         abstract public bool addStateTransition(State from, State to, int input, int reward);
         public abstract void initialize();
-        public abstract void train();
+        public abstract bool train();
         protected abstract void episode(State initialState);
+
+        abstract public void setIterations(int iterations);
     }
 }

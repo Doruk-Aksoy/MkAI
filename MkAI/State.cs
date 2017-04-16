@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace MkAI.DataTypes
+namespace MkAI
 {
     public class State
     {
