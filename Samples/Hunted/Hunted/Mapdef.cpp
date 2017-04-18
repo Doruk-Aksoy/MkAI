@@ -31,7 +31,7 @@ Map::~Map() {
 mapdef_t Map::get_tile(int x, int y) {
 	if (x >= 0 && x < width && y >= 0 && y < height)
 		return curstate[y][x];
-	return ' ';
+	return INVALID_TILE;
 }
 
 GameMode Map::get_gamemode() {
@@ -120,7 +120,7 @@ void Map::show_map() {
 	for (int i = 0; i < height; i++) {
 		for (int j = 0; j < width; j++)
 			show_tile(j, i);
-		cout << endl;
+		cout << '\n';
 	}
 }
 

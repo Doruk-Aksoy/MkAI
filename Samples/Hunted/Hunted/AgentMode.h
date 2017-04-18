@@ -7,6 +7,9 @@
 
 using namespace MkAI;
 
+using namespace System;
+using namespace System::Collections::Generic;
+
 class Agent {
 
 public:
@@ -19,10 +22,12 @@ public:
 	}
 
 	void setLearningSystem(bool train) {
-		if (train)
+		if (train) {
 			entity->getEntityAI()->setLearningSystem(gcnew QLearn(entity));
-		else
-			entity->readLearnedData();
+		}
+		else {
+			entity->getEntityAI()->setLearningSystem((QLearn^)entity->readLearnedData());
+		}
 	}
 
 	Entity^ getEntity() {
@@ -42,6 +47,7 @@ private:
 };
 
 void AgentTakeInput(Agent*);
+List<Byte>^ PlayerCoordToByteList(Player* P);
 void AddStateDataFromMap(State^, Player*);
 void SendRMatrix(Agent*);
 int GetRewardAtPos(point&);

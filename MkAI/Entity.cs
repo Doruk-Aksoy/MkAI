@@ -11,6 +11,11 @@ namespace MkAI
         DeCoLink_INCOMPATIBLE
     }
 
+    public enum LearningSystemType
+    {
+        LS_QLEARNING
+    }
+
     [Serializable]
     public class Entity
     {
@@ -18,7 +23,7 @@ namespace MkAI
         private int id;
         private EntityAI ai;             // Contains the DeCo Network model and its data
         private static Random rnd = new Random();
-        private double pos;
+        private LearningSystemType lstype;
 
         protected Logger Debugger = new Logger();
 
@@ -27,7 +32,6 @@ namespace MkAI
             tag = s;
             ai = new EntityAI(this);
             id = giveUniqueID();
-            pos = 0;
             EntityManager.entity_table.Add(id, this);
         }
 
@@ -51,16 +55,6 @@ namespace MkAI
             tag = s;
         }
 
-        public void updatePos(double p)
-        {
-            pos = p;
-        }
-
-        public double getPos()
-        {
-            return pos;
-        }
-
         private int giveUniqueID()
         {
             int e_id = 0;
@@ -71,19 +65,24 @@ namespace MkAI
             return e_id;
         }
 
+        public void setLearningSystemType(LearningSystemType type)
+        {
+            lstype = type;
+        }
+
         // Clean resources allocated for this Entity, not needed anymore
         public void dispose()
         {
             EntityManager.removeEntity(id);
         }
 
-        public bool outputLearnedData()
+        public bool exportLearnedData()
         {
             IFormatter formatter = new BinaryFormatter();
             Stream stream;
             try
             {
-                stream = new FileStream(tag + "_qlearn" + ".bin", FileMode.Create, FileAccess.Write, FileShare.None);
+                stream = new FileStream(tag + "_data" + ".bin", FileMode.Create, FileAccess.Write, FileShare.None);
             }
             catch (Exception E)
             {
@@ -92,27 +91,30 @@ namespace MkAI
             }
             formatter.Serialize(stream, ai.getLearningSystem());
             stream.Close();
-            Debugger.Log("Entity data saved successfully.");
+            Debugger.Log("Learning System data saved successfully.");
             return true;
         }
 
-        public bool readLearnedData()
+        public LearningSystem readLearnedData()
         {
             IFormatter formatter = new BinaryFormatter();
             Stream stream;
             try
             {
-                stream = new FileStream(tag + "_qlearn" + ".bin", FileMode.Open, FileAccess.Read, FileShare.Read);
+                stream = new FileStream(tag + "_data" + ".bin", FileMode.Open, FileAccess.Read, FileShare.Read);
             }
             catch (Exception E)
             {
                 Debugger.Log(E.ToString() + " occured when trying to read the input file.");
-                return false;
+                return null;
             }
-            ai.setLearningSystem((LearningSystem)formatter.Deserialize(stream));
+            LearningSystem res = null;
+            // try some factory pattern here later
+            if(lstype == LearningSystemType.LS_QLEARNING)
+                res = (QLearn)formatter.Deserialize(stream);
             stream.Close();
-            Debugger.Log("Entity data loaded successfully.");
-            return true;
+            Debugger.Log("Entity learning data loaded successfully.");
+            return res;
         }
     }
 }

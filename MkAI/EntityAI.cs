@@ -6,7 +6,9 @@ namespace MkAI
     [Serializable]
     public class EntityAI
     {
+        [NonSerialized]
         private DeCoNet network;
+        [NonSerialized]
         private DeCoInterpreter interpreter;
         private LearningSystem ls = null;
         private Entity e_assoc;

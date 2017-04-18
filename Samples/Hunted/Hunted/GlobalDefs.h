@@ -12,7 +12,8 @@
 #define INPUT_QUIT					0x51													// Q input
 #define INPUT_YES					0x59													// Y input
 
-#define BACKSLASH_NO_ESCAPE			'é'
+#define BACKSLASH_NO_ESCAPE			's'
+#define INVALID_TILE				'i'
 
 #define WLK_TILE_NUM				7
 

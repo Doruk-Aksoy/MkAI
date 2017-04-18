@@ -68,20 +68,26 @@ int main() {
 		Agent* agent = nullptr;
 		if (gamemode == GM_NORMAGENT) {
 			Entity^ entity = gcnew Entity("HuntedAgent");
+			entity->setLearningSystemType(LearningSystemType::LS_QLEARNING);
 			agent = new Agent(p, entity);
 			// agentmode is either train or use recorded data, true = train
 			agent->setLearningSystem(agentmode);
 			if (agentmode) {
-				agent->getLearningSystem()->setIterations(5);
+				agent->getLearningSystem()->setLogging(false);
+				agent->getLearningSystem()->setIterations(300);
+				agent->getLearningSystem()->setGamma(0.5);
 				SendRMatrix(agent);
-				if (agent->getLearningSystem()->train()) {
+				if (agent->getLearningSystem()->train_randomgoals()) {
 					cout << "Training complete!\n Reverting back to the menu...";
-					agent->getEntity()->outputLearnedData();
+					agent->getEntity()->exportLearnedData();
 					g_delay(1.0);
+					clearscreen();
+					g_delay(0.075);
 					goto GameLoop;
 				}
 			}
 		}
+		CurrentMap->show_map();
 		while (gstate != GS_LOST && gstate != GS_EXIT) {
 			// Player starts
 			p = GeneratePlayer(CurrMap);

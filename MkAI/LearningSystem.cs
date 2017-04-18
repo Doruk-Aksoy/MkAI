@@ -7,18 +7,21 @@ namespace MkAI
     public abstract class LearningSystem
     {
         protected Entity assoc;
-        protected int next_state_id = 0;
+        [NonSerialized]
+        protected int next_state_id =0;
+        [NonSerialized]
         protected State curstate = null;
-
-        protected bool logging = false;
-        protected Logger Debugger = new Logger();
+        [NonSerialized]
+        protected Logger Debugger = null;
 
         // Keep a set of goal states for checking
+        [NonSerialized]
         protected HashSet<State> goal_states = new HashSet<State>();
 
         // state list contains the list of all defined states by the user
         protected HashSet<State> state_list;
         // transition list -- holds for which inputs, a transition is possible
+        [NonSerialized]
         protected Dictionary<State, HashSet<Transition>> transitions;
 
         public LearningSystem(Entity e)
@@ -26,6 +29,7 @@ namespace MkAI
             assoc = e;
             state_list = new HashSet<State>();
             transitions = new Dictionary<State, HashSet<Transition>>();
+            Debugger = new MkAI.Logger();
         }
 
         public void incrementNextStateID()
@@ -64,14 +68,35 @@ namespace MkAI
             curstate = S;
         }
 
+        public State findState(List<Byte> data)
+        {
+            foreach (State S in state_list) {
+                bool matched = true;
+                for (int i = 0; matched && i < data.Count; ++i) {
+                    if (data[i] != S.getData()[i])
+                        matched = false;
+                }
+                if (matched)
+                    return S;
+            }
+            return null;
+        }
+
+        public void setLogging(bool b)
+        {
+            Debugger.setLogging(b);
+        }
+
         // Overrides for other Classes
 
         abstract public bool addState(State S);
         abstract public bool addStateTransition(State from, State to, int input, int reward);
         public abstract void initialize();
-        public abstract bool train();
+        public abstract bool train_randomgoals();
+        public abstract bool train_allstatesgoals();
         protected abstract void episode(State initialState);
 
+        abstract public void setGamma(double g);
         abstract public void setIterations(int iterations);
     }
 }

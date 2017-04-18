@@ -72,9 +72,7 @@ namespace MkAI
 
         public override int GetHashCode()
         {
-            if (data == null)
-                return label.GetHashCode();
-            return data.GetHashCode();
+            return data.Length;
         }
     }
 }

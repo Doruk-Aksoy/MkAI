@@ -187,7 +187,6 @@ Map* GenerateMap(int levelnum, GameMode gm) {
 	const point p = GetLevelDim(levelnum, gm);
 	Map* CurrMap = new Map(p.x, p.y);
 	CurrMap->load_map(levelnum, gm);
-	CurrMap->show_map();
 	CurrMap->set_gamemode(gm);
 	CurrMap->set_levelcount(levelnum);
 	return CurrMap;
