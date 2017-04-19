@@ -24,12 +24,14 @@ string operator+ (string, string);
 void DisplayMenu();
 void DisplayDifficulty();
 void DisplayAgentMode();
+void DisplayMapSelect();
 Map* GenerateMap(int, GameMode);
 Player* GeneratePlayer(Map*);
 void drawatxy(int, int, char);
 GameMode AskGameMode();
 Difficulty AskDifficulty();
 bool AskAgentMode();
+int AskMapNumber();
 
 void ShowMap();
 void gotoxy(short, short);

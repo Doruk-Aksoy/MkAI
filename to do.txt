@@ -1,5 +1,6 @@
-3) Make state saving logic
-4) File I/O for saving game session data, and a pointer to this file
-5) Test capabilities with just points first
-6) Add dynamic factors (enemies etc.) in the rewards as outside element
-7) Test again
+==== TO DO LIST FOR MKAI ====
+
+- Implement new exploration policies (The only one right now is completely stochastic => pick a random state)
+- Test performance of these and compare
+- Add ways to integrate DecoNET with learning algorithms
+- Test DecoNET with learning algorithms

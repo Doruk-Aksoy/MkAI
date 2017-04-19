@@ -62,6 +62,10 @@ void DisplayAgentMode() {
 	cout << "Choose the agent mode\n\n" << lightgreen << "   Training\n" << yellow << "   Play\n" << normal;
 }
 
+void DisplayMapSelect() {
+	cout << "Choose the map to play\n\n" << lightgreen << "   1. Level 1\n   2. Level 2\n   3. Level 3\n" << normal;
+}
+
 void drawatxy(int x, int y, char c) {
 	gotoxy(x, y);
 	cout << c;
@@ -164,6 +168,37 @@ bool AskAgentMode() {
 		}
 		else if (GetAsyncKeyState(VK_DOWN) & 0x8000) {
 			if (base.y < 3) {
+				drawatxy(1, base.y, ' ');
+				base.y++;
+				drawatxy(1, base.y, '*');
+				g_delay(0.125);
+			}
+		}
+		else if (GetAsyncKeyState(VK_UP) & 0x8000) {
+			if (base.y > 2) {
+				drawatxy(1, base.y, ' ');
+				base.y--;
+				drawatxy(1, base.y, '*');
+				g_delay(0.125);
+			}
+		}
+		else
+			_getch();
+	}
+}
+
+int AskMapNumber() {
+	// xy norm = 1, 2 y++ for rest
+	point base(1, 2);
+	drawatxy(1, 2, '*');
+	while (GetAsyncKeyState(VK_RETURN)) // while it is being pressed, do not consider any input until we let go of the key
+		g_delay(0.001);
+	while (true) { // now we let go of it, consider inputs once more
+		if (GetAsyncKeyState(VK_RETURN) & 0x8000) {
+			return base.y - 2;
+		}
+		else if (GetAsyncKeyState(VK_DOWN) & 0x8000) {
+			if (base.y < 4) {
 				drawatxy(1, base.y, ' ');
 				base.y++;
 				drawatxy(1, base.y, '*');

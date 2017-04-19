@@ -25,7 +25,8 @@ namespace MkAI
         public State(State S)
         {
             label = S.label;
-            data = S.getData();
+            data = new Byte[S.data.Length];
+            S.data.CopyTo(data, 0);
             state_id = S.getID();
             system_ref = S.getSystem();
         }
@@ -57,7 +58,7 @@ namespace MkAI
             return system_ref;
         }
 
-        // compare data contents
+        // compare data contents (optimize with specialized State equality comparison)
         override public bool Equals(Object S)
         {
             if (S == null || data == null || ((State)S).data == null)

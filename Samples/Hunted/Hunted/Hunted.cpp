@@ -40,6 +40,8 @@ int main() {
 
 	GameLoop:
 
+		Map* CurrMap;
+
 		ShowConsoleCursor(false);
 		DisplayMenu();
 
@@ -52,7 +54,12 @@ int main() {
 			DisplayAgentMode();
 			agentmode = AskAgentMode();
 			clearscreen();
+			DisplayMapSelect();
+			levelcounter = AskMapNumber();
+			clearscreen();
+			g_delay(0.075);
 		}
+		CurrMap = GenerateMap(levelcounter, gamemode);
 
 		g_delay(0.075); // have delay between inputs in order to avoid instant screen switches
 		DisplayDifficulty();
@@ -61,9 +68,8 @@ int main() {
 		clearscreen();
 		g_delay(0.075);
 
-		GameState gstate = GS_PLAYING;
-		Map* CurrMap = GenerateMap(levelcounter, gamemode);
 		CurrentMap = CurrMap;
+		GameState gstate = GS_PLAYING;
 		Player* p = GeneratePlayer(CurrMap);
 		Agent* agent = nullptr;
 		if (gamemode == GM_NORMAGENT) {
@@ -73,11 +79,13 @@ int main() {
 			// agentmode is either train or use recorded data, true = train
 			agent->setLearningSystem(agentmode);
 			if (agentmode) {
-				agent->getLearningSystem()->setLogging(false);
-				agent->getLearningSystem()->setIterations(300);
-				agent->getLearningSystem()->setGamma(0.5);
+				agent->getLearningSystem()->setLogging(true);
+				agent->getLearningSystem()->setIterations(200);
+				agent->getLearningSystem()->setGamma(0.9f);
 				SendRMatrix(agent);
 				if (agent->getLearningSystem()->train_randomgoals()) {
+				//if (agent->getLearningSystem()->train_knowngoals()) {
+				//if(agent->getLearningSystem()->train_allstatesgoals()) {
 					cout << "Training complete!\n Reverting back to the menu...";
 					agent->getEntity()->exportLearnedData();
 					g_delay(1.0);

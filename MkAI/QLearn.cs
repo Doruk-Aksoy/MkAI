@@ -11,19 +11,27 @@ namespace MkAI
     [Serializable]
     public class QLearn : LearningSystem
     {
+        // this is for maximum random rolls to prevent getting systems stuck
+        const int MAX_RANDOM_ITERATIONS = 256;
         [NonSerialized]
         private double GAMMA = 0.75;
         [NonSerialized]
-        private int ITERATIONS = 10;
+        private int iterations = 10;
         [NonSerialized]
         private State workstate = null;
         
         // learned values -- make this into list of integer stuff with copying!
-        private Dictionary<State, HashSet<Transition>> Q;
+        private Dictionary<State, List<Transition>> Q;
+        // consider a list of prohibited states for an episode, to mark them as already visited and not bother with them
+        [NonSerialized]
+        private bool endEpisode = false;
+        [NonSerialized]
+        private List<State> prohibited; // write extension later to prevent deep copy of states on add operation
 
         public QLearn(Entity E) : base(E)
         {
-            Q = new Dictionary<State, HashSet<Transition>>();
+            Q = new Dictionary<State, List<Transition>>();
+            prohibited = new List<State>();
             E.setLearningSystemType(LearningSystemType.LS_QLEARNING);
             //for (int i = 0; i < size; ++i)
                 //Q.Add(new List<State>());
@@ -93,79 +101,110 @@ namespace MkAI
         // return the corresponding transition pair from R and Q matrices
         private Transition getRandomAction(out Transition Qres)
         {
-            int dest = 0;
-            bool choiceIsValid = false;
+            int dest = 0, max_iter = 0;
             Transition Rres = null;
-
             // Randomly choose a possible action connected to the current state.
             Qres = null;
-            while (choiceIsValid == false)
+            // upperbound is for an input for the transition
+            do
             {
-                int pos = 0;
-                // upperbound is the upperbound for an input for the transition
                 dest = new Random().Next(0, transitions[workstate].Count);
-                foreach (Transition T in transitions[workstate])
-                {
-                    // if I'm at the right one
-                    if (dest == pos)
-                    {
-                        choiceIsValid = true;
-                        Rres = T;
-                        break;
-                    }
-                    pos++;
-                }
-                // return the corresponding Q one as well (in the future, improve this part as it can cause performance issues)
-                foreach (Transition T in Q[workstate])
-                {
-                    // if I'm at the right one
-                    if (T.getDestination().Equals(Rres.getDestination()))
-                    {
-                        Qres = T;
-                        break;
-                    }
-                }
+                max_iter++;
+            } while (max_iter < MAX_RANDOM_ITERATIONS && prohibited.Contains(transitions[workstate][dest].getDestination()));
+            // check if we must end the episode due to getting stuck
+            if (max_iter == MAX_RANDOM_ITERATIONS)
+            {
+                //Debugger.Log("Episode halted due to maximum iteration being reached.");
+                endEpisode = true;
+            }
+            else
+            {
+                Rres = transitions[workstate][dest];
+                Qres = Q[workstate][dest];
             }
             return Rres;
         }
 
         override public bool train_allstatesgoals()
         {
+            LogSystemConfig();
+            OutputR();
+
             // Perform training, starting at all initial states.
-            for (int j = 0; j < ITERATIONS; j++)
+            for (int j = 0; j < iterations; j++)
             {
                 // for every iteration, check every state there is
                 foreach (State G in state_list)
                 {
                     addGoalState(G);
+                    Debugger.Log("Iteration #" + (j + 1) + " for state " + G.getLabel() + " started.");
                     foreach (State S in state_list)
+                    {
+                        reset_prohibitions();
                         episode(S);
+                    }
+                    Debugger.Log("Iteration #" + (j + 1) + " finished.");
                     removeGoalState(G);
                 }
             }
+
+            OutputQ();
             return true;
         }
 
         override public bool train_randomgoals()
         {
+            LogSystemConfig();
+            OutputR();
+
             // Perform training, starting at all initial states.
-            for (int j = 0; j < ITERATIONS; j++)
+            for (int j = 0; j < iterations; j++)
             {
                 State G = getRandomState();
                 addGoalState(G);
+                Debugger.Log("Iteration #" + (j + 1) + " started.");
                 foreach (State S in state_list)
+                {
+                    reset_prohibitions();
                     episode(S);
+                }
+                Debugger.Log("Iteration #" + (j + 1) + " finished.");
                 removeGoalState(G);
             }
+
+            OutputQ();
+            return true;
+        }
+
+        override public bool train_knowngoals()
+        {
+            LogSystemConfig();
+            OutputR();
+
+            // Perform training, starting at all initial states.
+            for (int j = 0; j < iterations; j++)
+            {
+                Debugger.Log("Iteration #" + (j + 1) + " started.");
+                foreach (State S in state_list)
+                {
+                    reset_prohibitions();
+                    episode(S);
+                }
+                Debugger.Log("Iteration #" + (j + 1) + " finished.");
+            }
+
+            OutputQ();
             return true;
         }
 
         public bool goalReached()
         {
-            // if curstate is one of the defined goal states
+            // if current state is one of the defined goal states
             foreach (State S in goal_states)
-                if (S.Equals(curstate))
+            {
+                if (S.Equals(workstate))
                     return true;
+            }
             return false;
         }
 
@@ -177,16 +216,19 @@ namespace MkAI
                 if (transitions[initialState].Count > 0)
                 {
                     workstate = initialState;
-
+                    prohibited.Add(workstate);
                     // Travel from state to state until goal state is reached.
                     do
                     {
                         chooseAnAction();
-                    } while (goalReached());
-                    
-                    // When we meet a goal, run through the set once more for convergence.
-                    for (int i = 0; i < state_list.Count; i++)
-                        chooseAnAction();
+                    } while (!endEpisode && !goalReached());
+
+                    if (!endEpisode)
+                    {
+                        // When we meet a goal, run through the set once more for convergence.
+                        for (int i = 0; i < state_list.Count; i++)
+                            chooseAnAction();
+                    }
                 }
             }
             catch(Exception E)
@@ -206,6 +248,7 @@ namespace MkAI
                 // update the reward
                 toUpdate.setReward(reward(possibleAction));
                 workstate = possibleAction.getDestination();
+                prohibited.Add(workstate);
             }
         }
 
@@ -227,13 +270,10 @@ namespace MkAI
                         foundNewWinner = false;
                         foreach (Transition T in Q[S])
                         {
-                            if (T != winner) // Avoid self-comparison.
+                            if (T.getReward() > winner.getReward())
                             {
-                                if (T.getReward() > winner.getReward())
-                                {
-                                    winner = T;
-                                    foundNewWinner = true;
-                                }
+                                winner = T;
+                                foundNewWinner = true;
                             }
                         }
 
@@ -265,7 +305,7 @@ namespace MkAI
 
         public int getIterations()
         {
-            return ITERATIONS;
+            return iterations;
         }
 
         public override void setGamma(double g)
@@ -276,7 +316,7 @@ namespace MkAI
 
         public override void setIterations(int iter)
         {
-            ITERATIONS = iter;
+            iterations = iter;
         }
 
         public State getCurrentState()
@@ -284,28 +324,32 @@ namespace MkAI
             return curstate;
         }
 
-        override public bool addState(State S)
+        // null if state wasn't there before but returns the actual state if it exists
+        override public State addState(State S)
         {
-            bool res = state_list.Add(S);
-            if (res)
+            State temp;
+            if(!state_list.TryGetValue(S, out temp))
+            {
+                state_list.Add(S);
                 Debugger.Log("Added State " + S.getLabel() + ".");
+                return null;
+            }
             else
                 Debugger.Log("State " + S.getLabel() + " already exists.");
-            return res;
+            return temp;
         }
 
         override public bool addStateTransition(State from, State to, int input, int reward)
         {
-            HashSet<Transition> temp;
+            List<Transition> temp;
             // fresh init of state -> transition table for a row
             if (!transitions.TryGetValue(from, out temp))
             {
-                // we need to deepcopy the transition object because transitions and Q hold different reward values
+                // we need to keep seperate copies because these will differ in the reward values
                 Transition T = new Transition(to, input, reward);
-                Transition QT = new Transition(to, input, reward);
-                // set reward to initially 0 -- we will learn these later
-                temp = new HashSet<Transition>();
-                HashSet<Transition> qtemp = new HashSet<Transition>();
+                Transition QT = new Transition(to, input, 0);
+                temp = new List<Transition>();
+                List<Transition> qtemp = new List<Transition>();
                 temp.Add(T);
                 qtemp.Add(QT);
                 transitions.Add(from, temp);
@@ -319,6 +363,59 @@ namespace MkAI
                 transitions[from].Add(T);
                 Q[from].Add(QT);
                 return true;
+            }
+        }
+
+        private void reset_prohibitions()
+        {
+            prohibited.Clear();
+            endEpisode = false;
+        }
+
+        private void LogSystemConfig()
+        {
+            Debugger.Log("Iterations = " + iterations + " Gamma = " + GAMMA);
+        }
+
+        private void OutputR()
+        {
+            Debugger.Log("R MATRIX\n------------------");
+            foreach (State S in state_list)
+            {
+                string s = S.getLabel() + " -> ";
+                try
+                {
+                    foreach (Transition T in transitions[S])
+                    {
+                        s += T.getDestination().getLabel() + "<" + T.getReward() + ">  ";
+                    }
+                }
+                catch (Exception E)
+                {
+                    Debugger.Log("No transitions.");
+                }
+                Debugger.Log(s);
+            }
+        }
+
+        private void OutputQ()
+        {
+            Debugger.Log("Q MATRIX\n------------------");
+            foreach (State S in state_list)
+            {
+                string s = S.getLabel() + " -> ";
+                try
+                {
+                    foreach (Transition T in Q[S])
+                    {
+                        s += T.getDestination().getLabel() + "<" + T.getReward() + ">  ";
+                    }
+                }
+                catch (Exception E)
+                {
+                    s += "No transitions.";
+                }
+                Debugger.Log(s);
             }
         }
     }

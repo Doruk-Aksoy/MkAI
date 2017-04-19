@@ -16,19 +16,20 @@ namespace MkAI
 
         // Keep a set of goal states for checking
         [NonSerialized]
-        protected HashSet<State> goal_states = new HashSet<State>();
+        protected HashSet<State> goal_states;
 
         // state list contains the list of all defined states by the user
         protected HashSet<State> state_list;
         // transition list -- holds for which inputs, a transition is possible
         [NonSerialized]
-        protected Dictionary<State, HashSet<Transition>> transitions;
+        protected Dictionary<State, List<Transition>> transitions;
 
         public LearningSystem(Entity e)
         {
             assoc = e;
-            state_list = new HashSet<State>();
-            transitions = new Dictionary<State, HashSet<Transition>>();
+            goal_states = new HashSet<State>((new StateEqualityComparer()));
+            state_list = new HashSet<State>((new StateEqualityComparer()));
+            transitions = new Dictionary<State, List<Transition>>();
             Debugger = new MkAI.Logger();
         }
 
@@ -89,11 +90,12 @@ namespace MkAI
 
         // Overrides for other Classes
 
-        abstract public bool addState(State S);
+        abstract public State addState(State S);
         abstract public bool addStateTransition(State from, State to, int input, int reward);
         public abstract void initialize();
         public abstract bool train_randomgoals();
         public abstract bool train_allstatesgoals();
+        public abstract bool train_knowngoals();
         protected abstract void episode(State initialState);
 
         abstract public void setGamma(double g);

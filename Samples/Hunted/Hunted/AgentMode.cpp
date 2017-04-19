@@ -10,11 +10,11 @@ int GetRewardAtPos(point& p) {
 	int result = 0;
 	Item t;
 	if ((t = IsItem(CurrentMap->get_tile(p.x, p.y))) != NULLITEM)
-		result = 1 + static_cast<int> (t);
+		result = 256 * static_cast<int> (t);
 	else if (CurrentMap->get_tile(p.x, p.y) == EMPTY_SQUARE || CurrentMap->get_tile(p.x, p.y) == PLAYER_FRAME)
 		result = 0;
 	else
-		result = -50;
+		result = -256;
 	return result;
 }
 
@@ -50,6 +50,9 @@ void SendRMatrix(Agent* A) {
 				P->setpos(base);
 				AddStateDataFromMap(S, P, false);
 				ls->addState(S);
+				// for known goal test map 1
+				if ((i == 4 && j == 5) || (i == 9 && j == 8))
+					ls->addGoalState(S);
 				// for every possible move we can do on this state, create transitions
 				for (auto dir : valid_dir) {
 					if (IsValidAction(P, CurrentMap, dir)) {
@@ -62,8 +65,11 @@ void SendRMatrix(Agent* A) {
 						P->setpos(next);
 						AddStateDataFromMap(temp, P, false);
 						P->setpos(prev);
-						ls->addState(temp);
-						ls->addStateTransition(S, temp, static_cast<int>(dir), GetRewardAtPos(next));
+						State^ inThere = ls->addState(temp);
+						if(inThere == nullptr)
+							ls->addStateTransition(S, temp, static_cast<int>(dir), GetRewardAtPos(next));
+						else
+							ls->addStateTransition(S, inThere, static_cast<int>(dir), GetRewardAtPos(next));
 					}
 				}
 			}
