@@ -22,6 +22,7 @@ namespace MkAI
         private string tag;
         private int id;
         private EntityAI ai;             // Contains the DeCo Network model and its data
+        [NonSerialized]
         private static Random rnd = new Random();
         private LearningSystemType lstype;
 

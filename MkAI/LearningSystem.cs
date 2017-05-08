@@ -13,6 +13,7 @@ namespace MkAI
         protected State curstate = null;
         [NonSerialized]
         protected Logger Debugger = null;
+        protected List<Transition> taken_transitions = null;
 
         // Keep a set of goal states for checking
         [NonSerialized]
@@ -30,6 +31,7 @@ namespace MkAI
             goal_states = new HashSet<State>((new StateEqualityComparer()));
             state_list = new HashSet<State>((new StateEqualityComparer()));
             transitions = new Dictionary<State, List<Transition>>();
+            taken_transitions = new List<Transition>();
             Debugger = new MkAI.Logger();
         }
 
@@ -86,6 +88,21 @@ namespace MkAI
         public void setLogging(bool b)
         {
             Debugger.setLogging(b);
+        }
+
+        public void takeTransition(Transition T)
+        {
+            taken_transitions.Add(T);
+        }
+
+        public void popTransition()
+        {
+            taken_transitions.RemoveAt(taken_transitions.Count - 1);
+        }
+
+        public Transition getIndex(int i)
+        {
+            return taken_transitions[i];
         }
 
         // Overrides for other Classes

@@ -117,7 +117,7 @@ const mapdef_t MapList_Surv[SURV_LEVEL_COUNT][MAX_MAP_HEIGHT][MAX_MAP_WIDTH] = {
 	}
 };
 
-const point MapList_Collector_Dim[NORM_LEVEL_COUNT] = { point(6, 6), point(11, 10), point(31, 18) };
+const point MapList_Collector_Dim[NORM_LEVEL_COUNT] = { point(6, 6), point(11, 10), point(11, 10), point(31, 18) };
 const mapdef_t MapList_Collector[COLL_LEVEL_COUNT][MAX_MAP_HEIGHT][MAX_MAP_WIDTH] = {
 	{
 		"+####+",
@@ -132,6 +132,19 @@ const mapdef_t MapList_Collector[COLL_LEVEL_COUNT][MAX_MAP_HEIGHT][MAX_MAP_WIDTH
 		"+#########+",
 		"|H   #    |",
 		"|    #    |",
+		"|         |",
+		"|    #    |",
+		"|   .#    |",
+		"|    #    |",
+		"|    #   .|",
+		"|       ..|",
+		"+#########+"
+	},
+
+	{
+		"+#########+",
+		"|H   #  ..|",
+		"|    #   .|",
 		"|         |",
 		"|    #    |",
 		"|   .#    |",

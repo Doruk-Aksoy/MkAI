@@ -5,6 +5,8 @@
 
 #include "Mobj.h"
 
+#define MAX_ALLOWED_LOOPS 10
+
 using namespace MkAI;
 
 using namespace System;

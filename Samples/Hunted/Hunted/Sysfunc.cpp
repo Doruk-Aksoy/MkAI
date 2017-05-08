@@ -63,7 +63,7 @@ void DisplayAgentMode() {
 }
 
 void DisplayMapSelect() {
-	cout << "Choose the map to play\n\n" << lightgreen << "   1. Level 1\n   2. Level 2\n   3. Level 3\n" << normal;
+	cout << "Choose the map to play\n\n" << lightgreen << "   1. Level 1\n   2. Level 2\n   3. Level 3\n   4. Level 4\n" << normal;
 }
 
 void drawatxy(int x, int y, char c) {
@@ -198,7 +198,7 @@ int AskMapNumber() {
 			return base.y - 2;
 		}
 		else if (GetAsyncKeyState(VK_DOWN) & 0x8000) {
-			if (base.y < 4) {
+			if (base.y < 5) {
 				drawatxy(1, base.y, ' ');
 				base.y++;
 				drawatxy(1, base.y, '*');

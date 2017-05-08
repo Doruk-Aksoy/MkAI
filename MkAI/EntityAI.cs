@@ -11,6 +11,7 @@ namespace MkAI
         [NonSerialized]
         private DeCoInterpreter interpreter;
         private LearningSystem ls = null;
+        [NonSerialized]
         private Entity e_assoc;
 
         public EntityAI(Entity assoc)

@@ -79,6 +79,8 @@ void SendRMatrix(Agent* A) {
 
 // This part interfaces with the C# library for decision making using the learned Q matrix
 void AgentTakeInput(Agent* A) {
+	static int stuck_counter = 0;
+
 	Player* P = A->getPlayer();
 	QLearn^ ls = (QLearn^)(A->getLearningSystem());
 	State^ S = ls->getCurrentState();
@@ -91,7 +93,21 @@ void AgentTakeInput(Agent* A) {
 	// repeat this until goal state is reached
 	Transition^ toTake = ls->getCurrentHighest();
 	if (toTake != nullptr) {
+		int prevpts = P->getpts();
 		TakeAction(P, CurrentMap, static_cast<direction_t>(toTake->getInput()));
 		ls->setCurrentState(toTake->getDestination());
+		ls->takeTransition(toTake);
+		toTake->setReward(0); // mark this as no reward after taking
+		int afterpts = P->getpts();
+		// in this game, we are stuck if we cycle between 2 states, so we must check if the destination of the top 2 transitions are the same
+		// we simply check if we haven't been gathering any points for a while, for generalizing the problem
+		if (!(afterpts - prevpts))
+			stuck_counter++;
+		else
+			stuck_counter = 0;
+		// try to resolve the loop
+		if (stuck_counter > MAX_ALLOWED_LOOPS) {
+			// 
+		}
 	}
 }
