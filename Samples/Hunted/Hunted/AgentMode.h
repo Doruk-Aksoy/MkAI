@@ -28,7 +28,7 @@ public:
 			entity->getEntityAI()->setLearningSystem(gcnew QLearn(entity));
 		}
 		else {
-			entity->getEntityAI()->setLearningSystem((QLearn^)entity->readLearnedData());
+			entity->getEntityAI()->setLearningSystem((QLearn^)entity->readLearnedData_TXT());
 		}
 	}
 

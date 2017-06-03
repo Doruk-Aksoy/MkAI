@@ -12,6 +12,14 @@ namespace MkAI
         private int state_id;
         private LearningSystem system_ref;
 
+        public State()
+        {
+            label = "null";
+            data = null;
+            system_ref = null;
+            state_id = 0;
+        }
+
         // copy byte data to this later with another method
         public State(string l, LearningSystem L)
         {
@@ -58,6 +66,21 @@ namespace MkAI
             return system_ref;
         }
 
+        public void setID(int id)
+        {
+            state_id = id;
+        }
+
+        public void setLabel(string label)
+        {
+            this.label = label;
+        }
+
+        public void setRef(LearningSystem lref)
+        {
+            system_ref = lref;
+        }
+
         // compare data contents (optimize with specialized State equality comparison)
         override public bool Equals(Object S)
         {
@@ -73,7 +96,7 @@ namespace MkAI
 
         public override int GetHashCode()
         {
-            return data.Length;
+            return 1;
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Serialization;
 
 // add fsm open source code, write wrapper to make it easier to use.
 
@@ -11,7 +12,8 @@ namespace MkAI
     [Serializable]
     public class QLearn : LearningSystem
     {
-        // this is for maximum random rolls to prevent getting systems stuck
+        // this is for maximum random rolls to prevent getting systems stuck -- change in future to make sure less than max moves in a state
+        [NonSerialized]
         const int MAX_RANDOM_ITERATIONS = 256;
         [NonSerialized]
         private double GAMMA = 0.75;
@@ -71,6 +73,16 @@ namespace MkAI
                 }
             }
             return res;
+        }
+
+        public List<Transition> getCurrentTransitions()
+        {
+            return Q[curstate];
+        }
+
+        public Dictionary<State, List<Transition>> getQMatrix()
+        {
+            return Q;
         }
 
         override public void initialize()
@@ -328,7 +340,7 @@ namespace MkAI
         override public State addState(State S)
         {
             State temp;
-            if(!state_list.TryGetValue(S, out temp))
+            if((temp = findState(S.getData())) == null)
             {
                 state_list.Add(S);
                 Debugger.Log("Added State " + S.getLabel() + ".");
@@ -354,6 +366,7 @@ namespace MkAI
                 qtemp.Add(QT);
                 transitions.Add(from, temp);
                 Q.Add(from, qtemp);
+                Debugger.Log("Transition added. From " + from.getID() + " to " + to.getID() + ".");
                 return false;
             }
             else
@@ -362,7 +375,40 @@ namespace MkAI
                 Transition QT = new Transition(to, input, 0);
                 transitions[from].Add(T);
                 Q[from].Add(QT);
+                Debugger.Log("Transition added. From " + from.getID() + " to " + to.getID() + ".");
                 return true;
+            }
+        }
+
+        // used for loading directly for data read_txt on Entity
+        public bool addStateTransition_Load(State from, State to, int input, int reward)
+        {
+            List<Transition> temp;
+            // fresh init of state -> transition table for a row
+            if (!Q.TryGetValue(from, out temp))
+            {
+                Transition T = new Transition(to, input, reward);
+                temp = new List<Transition>();
+                temp.Add(T);
+                Q.Add(from, temp);
+                return false;
+            }
+            else
+            {
+                Transition T = new Transition(to, input, reward);
+                Q[from].Add(T);
+                return true;
+            }
+        }
+
+        public void reduceRewardAllTransitionToState(State S, double factor)
+        {
+            foreach(State s in state_list) {
+                foreach (Transition T in Q[s])
+                {
+                    if (T.getDestination().Equals(S))
+                        T.setReward((int)(T.getReward() * factor));
+                }
             }
         }
 

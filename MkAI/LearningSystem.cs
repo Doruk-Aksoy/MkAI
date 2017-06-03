@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Xml.Serialization;
 
 namespace MkAI
 {
@@ -45,6 +46,11 @@ namespace MkAI
             return next_state_id;
         }
 
+        public HashSet<State> getStateList()
+        {
+            return state_list;
+        }
+
         protected string getNextFreeStateLabel()
         {
             return "S" + next_state_id;
@@ -80,6 +86,32 @@ namespace MkAI
                         matched = false;
                 }
                 if (matched)
+                    return S;
+            }
+            return null;
+        }
+
+        public State findState(byte[] data)
+        {
+            foreach (State S in state_list)
+            {
+                bool matched = true;
+                for (int i = 0; matched && i < data.Length; ++i)
+                {
+                    if (data[i] != S.getData()[i])
+                        matched = false;
+                }
+                if (matched)
+                    return S;
+            }
+            return null;
+        }
+
+        public State findState(int id)
+        {
+            foreach (State S in state_list)
+            {
+                if (S.getID() == id)
                     return S;
             }
             return null;

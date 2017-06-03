@@ -80,14 +80,14 @@ int main() {
 			agent->setLearningSystem(agentmode);
 			if (agentmode) {
 				agent->getLearningSystem()->setLogging(true);
-				agent->getLearningSystem()->setIterations(200);
+				agent->getLearningSystem()->setIterations(50);
 				agent->getLearningSystem()->setGamma(0.9f);
 				SendRMatrix(agent);
 				if (agent->getLearningSystem()->train_randomgoals()) {
 				//if (agent->getLearningSystem()->train_knowngoals()) {
 				//if(agent->getLearningSystem()->train_allstatesgoals()) {
 					cout << "Training complete!\n Reverting back to the menu...";
-					agent->getEntity()->exportLearnedData();
+					agent->getEntity()->exportLearnedData_TXT();
 					g_delay(1.0);
 					clearscreen();
 					g_delay(0.075);

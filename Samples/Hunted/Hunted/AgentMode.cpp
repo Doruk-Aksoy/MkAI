@@ -2,6 +2,8 @@
 #include "GameFuncs.h"
 #include "SysFunc.h"
 
+#include <set>
+
 using namespace MkAI;
 
 static int state_keys = 0;
@@ -49,7 +51,9 @@ void SendRMatrix(Agent* A) {
 				State^ S = ls->makeState("S" + state_keys++);
 				P->setpos(base);
 				AddStateDataFromMap(S, P, false);
-				ls->addState(S);
+				State^ Stemp = ls->addState(S);
+				if(Stemp != nullptr)
+					S = Stemp; // don't let copies get through
 				// for known goal test map 1
 				if ((i == 4 && j == 5) || (i == 9 && j == 8))
 					ls->addGoalState(S);
@@ -81,6 +85,7 @@ void SendRMatrix(Agent* A) {
 void AgentTakeInput(Agent* A) {
 	static int stuck_counter = 0;
 
+
 	Player* P = A->getPlayer();
 	QLearn^ ls = (QLearn^)(A->getLearningSystem());
 	State^ S = ls->getCurrentState();
@@ -91,23 +96,31 @@ void AgentTakeInput(Agent* A) {
 	// since Q matrix tells us what we have learned so far and it should give the most optimum path do:
 	// pick highest reward transition for a given current state S
 	// repeat this until goal state is reached
-	Transition^ toTake = ls->getCurrentHighest();
+	Transition^ toTake = nullptr;
+	int curmax = INT_MIN;
+	List<Transition^>^ cur = ls->getCurrentTransitions();
+	for (int i = 0; i < cur->Count; ++i) {
+		if (cur[i]->getReward() > curmax && cur[i]->getReward() > 0) {
+			curmax = cur[i]->getReward();
+			toTake = cur[i];
+		}
+	}
+
 	if (toTake != nullptr) {
-		int prevpts = P->getpts();
 		TakeAction(P, CurrentMap, static_cast<direction_t>(toTake->getInput()));
 		ls->setCurrentState(toTake->getDestination());
 		ls->takeTransition(toTake);
-		toTake->setReward(0); // mark this as no reward after taking
-		int afterpts = P->getpts();
-		// in this game, we are stuck if we cycle between 2 states, so we must check if the destination of the top 2 transitions are the same
-		// we simply check if we haven't been gathering any points for a while, for generalizing the problem
-		if (!(afterpts - prevpts))
-			stuck_counter++;
-		else
-			stuck_counter = 0;
-		// try to resolve the loop
-		if (stuck_counter > MAX_ALLOWED_LOOPS) {
-			// 
-		}
+		
+		// update the transitions that all go to this state to have lower reward
+		ls->reduceRewardAllTransitionToState(toTake->getDestination(), 0.05);
+		// try boosting other transitions that go to neighbor states?
+	}
+	else {
+		// we're stuck, find older transitions to use
+		//toTake = cur[0]; // fix me later
+		TakeAction(P, CurrentMap, static_cast<direction_t>(toTake->getInput()));
+		ls->setCurrentState(toTake->getDestination());
+		ls->takeTransition(toTake);
+		toTake->setReward(0);
 	}
 }
