@@ -3,7 +3,7 @@
 namespace MkAI
 {
     [Serializable]
-    public class Transition
+    public class Transition : IComparable<Transition>
     {
         private State destination;
         private int input;
@@ -46,6 +46,16 @@ namespace MkAI
         public void setReward(int r)
         {
             reward = r;
+        }
+
+        public bool isEqual(Transition T)
+        {
+            return destination.Equals(T.destination) && input == T.input;
+        }
+
+        public int CompareTo(Transition T)
+        {
+            return reward.CompareTo(T.reward);
         }
     }
 }

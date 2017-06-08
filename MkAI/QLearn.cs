@@ -137,6 +137,16 @@ namespace MkAI
             return Rres;
         }
 
+        override public Transition findTransition(State from, int input)
+        {
+            foreach(Transition T in Q[from])
+            {
+                if (T.getInput() == input)
+                    return T;
+            }
+            return null;
+        }
+
         override public bool train_allstatesgoals()
         {
             LogSystemConfig();

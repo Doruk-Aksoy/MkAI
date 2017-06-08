@@ -14,7 +14,7 @@ namespace MkAI
         protected State curstate = null;
         [NonSerialized]
         protected Logger Debugger = null;
-        protected List<Transition> taken_transitions = null;
+        protected List<Transition> taken_transitions = new List<Transition>();
 
         // Keep a set of goal states for checking
         [NonSerialized]
@@ -23,7 +23,7 @@ namespace MkAI
         // state list contains the list of all defined states by the user
         protected HashSet<State> state_list;
         // transition list -- holds for which inputs, a transition is possible
-        [NonSerialized]
+        [NonSerialized] // serialize me later for findTransition!
         protected Dictionary<State, List<Transition>> transitions;
 
         public LearningSystem(Entity e)
@@ -32,7 +32,6 @@ namespace MkAI
             goal_states = new HashSet<State>((new StateEqualityComparer()));
             state_list = new HashSet<State>((new StateEqualityComparer()));
             transitions = new Dictionary<State, List<Transition>>();
-            taken_transitions = new List<Transition>();
             Debugger = new MkAI.Logger();
         }
 
@@ -129,7 +128,16 @@ namespace MkAI
 
         public void popTransition()
         {
-            taken_transitions.RemoveAt(taken_transitions.Count - 1);
+            if(taken_transitions.Count > 0)
+                taken_transitions.RemoveAt(0);
+        }
+
+        public bool isTaken(Transition T)
+        {
+            foreach (Transition t in taken_transitions)
+                if (t != null && t.isEqual(T))
+                    return true;
+            return false;
         }
 
         public Transition getIndex(int i)
@@ -141,6 +149,7 @@ namespace MkAI
 
         abstract public State addState(State S);
         abstract public bool addStateTransition(State from, State to, int input, int reward);
+        abstract public Transition findTransition(State from, int input);
         public abstract void initialize();
         public abstract bool train_randomgoals();
         public abstract bool train_allstatesgoals();
